@@ -97,10 +97,17 @@ public class AtencionService {
         repository.findById(atencionId).ifPresent(a -> {
             if (AtencionEvent.CONFIRMADA.equals(tipo) && a.getEstado() == EstadoAtencion.SOLICITADA) {
                 a.cambiarEstado(EstadoAtencion.CONFIRMADA, null);
+                publisher.publicarEventoKafka(resultado(a, AtencionEvent.CONFIRMADA, null));
             } else if (AtencionEvent.RECHAZADA.equals(tipo)) {
                 a.registrarMotivo(motivo);
+                publisher.publicarEventoKafka(resultado(a, AtencionEvent.RECHAZADA, motivo));
             }
         });
+    }
+
+    private static AtencionEvent resultado(Atencion a, String tipo, String motivo) {
+        return new AtencionEvent(a.getId(), tipo, a.getEstado().name(), motivo, a.getPaciente(),
+                a.getPrestacion(), a.getFecha(), a.getHora());
     }
 
     private static AtencionEvent evento(Atencion a, String motivo) {
